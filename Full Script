@@ -1,0 +1,59 @@
+pip install selenium
+
+!apt-get update
+!apt install chromium-chromedriver
+
+import csv
+import pandas as pd
+import time
+from urllib.request import urlopen
+from bs4 import BeautifulSoup
+
+from selenium import webdriver
+chrome_options = webdriver.ChromeOptions()
+chrome_options.add_argument('--headless')
+chrome_options.add_argument('--no-sandbox')
+chrome_options.add_argument('--disable-dev-shm-usage')
+wd = webdriver.Chrome('chromedriver',chrome_options=chrome_options)
+driver = webdriver.Chrome('chromedriver',chrome_options=chrome_options)
+
+source= 'https://ews.kemendag.go.id/'
+driver.get(source)
+time.sleep(7)
+content = driver.page_source
+
+bsObj = BeautifulSoup(content)
+table0 = bsObj.find_all('input', class_ ="form-control")
+date = str(table0[2]).split()[3][5:-1]
+
+bsObj = BeautifulSoup(content)
+table = bsObj.find_all('table', class_ ="table table_morecondensed table-sm table-hover")
+body = table[0].find('tbody')
+rows = body.find_all("td")
+
+komoditi = []
+satuan = []
+sekarang = []
+kemaren = []
+persen = []
+
+for i, link in enumerate(rows):
+    if i in range(1, len(rows), 7):
+        komoditi.append(link.get_text().lower().capitalize())
+    if i in range(2, len(rows), 7):
+        satuan.append(link.get_text())
+    if i in range(3, len(rows), 7):
+        sekarang.append(link.get_text())
+    if i in range(4, len(rows), 7):
+        kemaren.append(link.get_text())
+    if i in range(5, len(rows), 7):
+        persen.append(link.get_text())
+        
+df = pd.DataFrame()
+df['Komoditi'] = komoditi
+df['Satuan'] = satuan
+df['Tanggal'] = "2021-07-16"
+df['Harga'] = kemaren
+df['Perubahan (%)'] = persen
+
+df.to_csv('Harga Pokok.csv')
